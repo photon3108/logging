@@ -136,6 +136,8 @@ type Logger interface {
 	Noticef(format string, v ...interface{})
 	Info(v ...interface{})
 	Infof(format string, v ...interface{})
+
+	// go build -tags 'debug'
 	Debug(v ...interface{})
 	Debugf(format string, v ...interface{})
 }
