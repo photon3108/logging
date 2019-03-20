@@ -43,6 +43,7 @@ var (
 	funcNameColorFunc = color.New(color.FgCyan).SprintFunc()
 	fileColorFunc     = color.New(color.FgHiMagenta).SprintFunc()
 	lineColorFunc     = color.New(color.FgYellow).SprintFunc()
+	fieldColorFunc    = color.New(color.FgGreen).SprintFunc()
 )
 
 // DefaultLogger initializes defaultLogger.value and returns it.
@@ -122,6 +123,53 @@ func printf(output io.Writer, depth int, level *Level, msg string) {
 		lineColorFunc(line),
 		gitVersion,
 		buildVersion)
+}
+
+func sprint(valueList ...interface{}) string {
+	translatedList := make([]interface{}, 0, len(valueList))
+	translateField := func(field *Field) {
+		translatedList = append(translatedList, field.Sprint()...)
+	}
+	for _, value := range valueList {
+		switch v := value.(type) {
+		case Field:
+			translateField(&v)
+		case *Field:
+			translateField(v)
+		default:
+			translatedList = append(translatedList, value)
+		}
+	}
+	formedList := make([]interface{}, 0, len(translatedList)*2)
+	for _, value := range translatedList {
+		formedList = append(formedList, value, ", ")
+	}
+	end := len(formedList)
+	if end != 0 {
+		// Strip the last comma.
+		end--
+	}
+	return fmt.Sprint(formedList[:end]...)
+}
+
+func sprintf(format string, valueList ...interface{}) string {
+	if len(valueList) == 0 {
+		return fmt.Sprintf(format, valueList...)
+	}
+
+	beginField := len(valueList)
+Loop:
+	for idx, value := range valueList {
+		switch value.(type) {
+		case Field, *Field:
+			beginField = idx
+			break Loop
+		}
+	}
+	newList := make([]interface{}, 0, len(valueList)-beginField+1)
+	newList = append(newList, fmt.Sprintf(format, valueList[:beginField]...))
+	newList = append(newList, valueList[beginField:]...)
+	return sprint(newList...)
 }
 
 // Logger is an interface.
@@ -221,55 +269,66 @@ func (logger *concreteLogger) Infof(format string, v ...interface{}) {
 }
 
 func (logger *concreteLogger) Fatald(depth int, v ...interface{}) {
-	printf(logger.output, depth, level.fatal, fmt.Sprint(v...))
+	printf(logger.output, depth, level.fatal, sprint(v...))
 }
 
 func (logger *concreteLogger) Fataldf(
 	depth int, format string, v ...interface{}) {
-	printf(logger.output, depth, level.fatal, fmt.Sprintf(format, v...))
+	printf(logger.output, depth, level.fatal, sprintf(format, v...))
 }
 
 func (logger *concreteLogger) Errord(depth int, v ...interface{}) {
-	printf(logger.output, depth, level.error, fmt.Sprint(v...))
+	printf(logger.output, depth, level.error, sprint(v...))
 }
 
 func (logger *concreteLogger) Errordf(
 	depth int, format string, v ...interface{}) {
-	printf(logger.output, depth, level.error, fmt.Sprintf(format, v...))
+	printf(logger.output, depth, level.error, sprintf(format, v...))
 }
 
 func (logger *concreteLogger) Warnd(depth int, v ...interface{}) {
-	printf(logger.output, depth, level.warn, fmt.Sprint(v...))
+	printf(logger.output, depth, level.warn, sprint(v...))
 }
 
 func (logger *concreteLogger) Warndf(
 	depth int, format string, v ...interface{}) {
-	printf(logger.output, depth, level.warn, fmt.Sprintf(format, v...))
+	printf(logger.output, depth, level.warn, sprintf(format, v...))
 }
 
 func (logger *concreteLogger) Noticed(depth int, v ...interface{}) {
-	printf(logger.output, depth, level.notice, fmt.Sprint(v...))
+	printf(logger.output, depth, level.notice, sprint(v...))
 }
 
 func (logger *concreteLogger) Noticedf(
 	depth int, format string, v ...interface{}) {
-	printf(logger.output, depth, level.notice, fmt.Sprintf(format, v...))
+	printf(logger.output, depth, level.notice, sprintf(format, v...))
 }
 
 func (logger *concreteLogger) Infod(depth int, v ...interface{}) {
-	printf(logger.output, depth, level.info, fmt.Sprint(v...))
+	printf(logger.output, depth, level.info, sprint(v...))
 }
 
 func (logger *concreteLogger) Infodf(
 	depth int, format string, v ...interface{}) {
-	printf(logger.output, depth, level.info, fmt.Sprintf(format, v...))
+	printf(logger.output, depth, level.info, sprintf(format, v...))
 }
 
 func (logger *concreteLogger) Debugd(depth int, v ...interface{}) {
-	printf(logger.output, depth, level.debug, fmt.Sprint(v...))
+	printf(logger.output, depth, level.debug, sprint(v...))
 }
 
 func (logger *concreteLogger) Debugdf(
 	depth int, format string, v ...interface{}) {
-	printf(logger.output, depth, level.debug, fmt.Sprintf(format, v...))
+	printf(logger.output, depth, level.debug, sprintf(format, v...))
+}
+
+type Field map[string]interface{}
+
+func (field *Field) Sprint() []interface{} {
+	translatedList := make([]interface{}, 0, len(*field))
+	for key, value := range *field {
+		translatedList = append(
+			translatedList, fmt.Sprintf("%s(%v)", fieldColorFunc(key), value))
+	}
+	return translatedList
 }
