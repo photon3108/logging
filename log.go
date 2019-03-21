@@ -340,6 +340,10 @@ func NewField(values ...interface{}) *Field {
 	return f
 }
 
+func NewErrField(value interface{}) *Field {
+	return NewField("err", value)
+}
+
 func (f *Field) Sprint() []interface{} {
 	translatedList := make([]interface{}, 0, len(f.keys))
 	for _, key := range f.keys {
