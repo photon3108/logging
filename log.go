@@ -127,12 +127,12 @@ func printf(output io.Writer, depth int, level *Level, msg string) {
 
 func sprint(valueList ...interface{}) string {
 	translatedList := make([]interface{}, 0, len(valueList))
-	translateField := func(f *field) {
+	translateField := func(f *Field) {
 		translatedList = append(translatedList, f.Sprint()...)
 	}
 	for _, value := range valueList {
 		switch v := value.(type) {
-		case *field:
+		case *Field:
 			translateField(v)
 		default:
 			translatedList = append(translatedList, value)
@@ -159,7 +159,7 @@ func sprintf(format string, valueList ...interface{}) string {
 Loop:
 	for idx, value := range valueList {
 		switch value.(type) {
-		case *field:
+		case *Field:
 			beginField = idx
 			break Loop
 		}
@@ -320,13 +320,13 @@ func (logger *concreteLogger) Debugdf(
 	printf(logger.output, depth, level.debug, sprintf(format, v...))
 }
 
-type field struct {
+type Field struct {
 	values map[string]interface{}
 	keys   []string
 }
 
-func NewField(values ...interface{}) *field {
-	f := new(field)
+func NewField(values ...interface{}) *Field {
+	f := new(Field)
 	f.values = make(map[string]interface{})
 	f.keys = make([]string, 0, len(values))
 	for idx := 0; idx+1 < len(values); idx += 2 {
@@ -340,7 +340,7 @@ func NewField(values ...interface{}) *field {
 	return f
 }
 
-func (f *field) Sprint() []interface{} {
+func (f *Field) Sprint() []interface{} {
 	translatedList := make([]interface{}, 0, len(f.keys))
 	for _, key := range f.keys {
 		_, exist := f.values[key]
@@ -355,11 +355,13 @@ func (f *field) Sprint() []interface{} {
 	return translatedList
 }
 
-func (f *field) Add(key string, value interface{}) *field {
+func (f *Field) Add(key string, value interface{}) *Field {
+	// Disallow overwrite.
 	_, exist := f.values[key]
 	if exist {
 		return f
 	}
+
 	f.keys = append(f.keys, key)
 	f.values[key] = value
 	return f
