@@ -127,14 +127,12 @@ func printf(output io.Writer, depth int, level *Level, msg string) {
 
 func sprint(valueList ...interface{}) string {
 	translatedList := make([]interface{}, 0, len(valueList))
-	translateField := func(field *Field) {
-		translatedList = append(translatedList, field.Sprint()...)
+	translateField := func(f *field) {
+		translatedList = append(translatedList, f.Sprint()...)
 	}
 	for _, value := range valueList {
 		switch v := value.(type) {
-		case Field:
-			translateField(&v)
-		case *Field:
+		case *field:
 			translateField(v)
 		default:
 			translatedList = append(translatedList, value)
@@ -161,7 +159,7 @@ func sprintf(format string, valueList ...interface{}) string {
 Loop:
 	for idx, value := range valueList {
 		switch value.(type) {
-		case Field, *Field:
+		case *field:
 			beginField = idx
 			break Loop
 		}
@@ -322,13 +320,47 @@ func (logger *concreteLogger) Debugdf(
 	printf(logger.output, depth, level.debug, sprintf(format, v...))
 }
 
-type Field map[string]interface{}
+type field struct {
+	values map[string]interface{}
+	keys   []string
+}
 
-func (field *Field) Sprint() []interface{} {
-	translatedList := make([]interface{}, 0, len(*field))
-	for key, value := range *field {
+func NewField(values ...interface{}) *field {
+	f := new(field)
+	f.values = make(map[string]interface{})
+	f.keys = make([]string, 0, len(values))
+	for idx := 0; idx+1 < len(values); idx += 2 {
+		key := values[idx]
+		strKey, ok := key.(string)
+		if !ok {
+			strKey = fmt.Sprint(key)
+		}
+		f.Add(strKey, values[idx+1])
+	}
+	return f
+}
+
+func (f *field) Sprint() []interface{} {
+	translatedList := make([]interface{}, 0, len(f.keys))
+	for _, key := range f.keys {
+		_, exist := f.values[key]
+		if !exist {
+			translatedList = append(translatedList, key)
+			continue
+		}
 		translatedList = append(
-			translatedList, fmt.Sprintf("%s(%v)", fieldColorFunc(key), value))
+			translatedList,
+			fmt.Sprintf("%s(%v)", fieldColorFunc(key), f.values[key]))
 	}
 	return translatedList
+}
+
+func (f *field) Add(key string, value interface{}) *field {
+	_, exist := f.values[key]
+	if exist {
+		return f
+	}
+	f.keys = append(f.keys, key)
+	f.values[key] = value
+	return f
 }

@@ -75,37 +75,37 @@ func (suite *DefaultLoggerSuite) TestErrorField() {
 	suite.Require().Contains(output, msg0)
 
 	buffer.Reset()
-	logger.Error(Field{})
+	logger.Error(NewField())
 	output = buffer.String()
 	suite.Require().Contains(output, level.error.name)
 
-	field0 := Field{
-		"bool": true,
-		"int":  10,
-	}
+	field0 := NewField(
+		"bool", true,
+		"int", 10,
+	)
 	buffer.Reset()
 	logger.Error(field0)
 	output = buffer.String()
 	suite.Require().Contains(output, level.error.name)
-	for key, value := range field0 {
+	for key, value := range field0.values {
 		suite.Require().Contains(output, fmt.Sprintf("%s(%v)", key, value))
 	}
 
 	msg1 := "2c9a3582-2990-42c5-89cf-4c6f9cde4e1e"
-	field1 := Field{
-		"float":  23.4,
-		"string": "abc",
-	}
+	field1 := NewField(
+		"float", 23.4,
+		"string", "abc",
+	)
 	buffer.Reset()
-	logger.Error(msg0, field0, msg1, &field1)
+	logger.Error(msg0, field0, msg1, field1)
 	output = buffer.String()
 	suite.Require().Contains(output, level.error.name)
 	suite.Require().Contains(output, msg0)
 	suite.Require().Contains(output, msg1)
-	for key, value := range field0 {
+	for key, value := range field0.values {
 		suite.Require().Contains(output, fmt.Sprintf("%s(%v)", key, value))
 	}
-	for key, value := range field1 {
+	for key, value := range field1.values {
 		suite.Require().Contains(output, fmt.Sprintf("%s(%v)", key, value))
 	}
 }
@@ -133,21 +133,21 @@ func (suite *DefaultLoggerSuite) TestWarnfField() {
 	suite.Require().Contains(output, level.warn.name)
 	suite.Require().Contains(output, msg0)
 
-	logger.Errorf(msg0, Field{})
+	logger.Errorf(msg0, NewField())
 	output = buffer.String()
 	suite.Require().Contains(output, level.warn.name)
 	suite.Require().Contains(output, msg0)
 
-	field0 := Field{
-		"bool": true,
-		"int":  10,
-	}
+	field0 := NewField(
+		"bool", true,
+		"int", 10,
+	)
 	buffer.Reset()
 	logger.Errorf(msg0, field0)
 	output = buffer.String()
 	suite.Require().Contains(output, level.warn.name)
 	suite.Require().Contains(output, msg0)
-	for key, value := range field0 {
+	for key, value := range field0.values {
 		suite.Require().Contains(output, fmt.Sprintf("%s(%v)", key, value))
 	}
 
@@ -156,27 +156,27 @@ func (suite *DefaultLoggerSuite) TestWarnfField() {
 	output = buffer.String()
 	suite.Require().Contains(output, level.warn.name)
 	suite.Require().Contains(output, msg0)
-	for key, value := range field0 {
+	for key, value := range field0.values {
 		suite.Require().Contains(output, fmt.Sprintf("%s(%v)", key, value))
 	}
 
 	msg1 := "2c9a3582-2990-42c5-8cf-4c6f9cde4e1e"
 	msg2 := "5ac9795c-2c06-43b1-aae8-d72a8f573738"
-	field1 := Field{
-		"float":  23.4,
-		"string": "abc",
-	}
+	field1 := NewField(
+		"float", 23.4,
+		"string", "abc",
+	)
 	buffer.Reset()
-	logger.Errorf("%s, %s", msg0, msg1, field0, msg2, &field1)
+	logger.Errorf("%s, %s", msg0, msg1, field0, msg2, field1)
 	output = buffer.String()
 	suite.Require().Contains(output, level.warn.name)
 	suite.Require().Contains(output, msg0)
 	suite.Require().Contains(output, msg1)
 	suite.Require().Contains(output, msg2)
-	for key, value := range field0 {
+	for key, value := range field0.values {
 		suite.Require().Contains(output, fmt.Sprintf("%s(%v)", key, value))
 	}
-	for key, value := range field1 {
+	for key, value := range field1.values {
 		suite.Require().Contains(output, fmt.Sprintf("%s(%v)", key, value))
 	}
 }
